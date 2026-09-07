@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Reports - Lab Logbook{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">Usage Reports</div>
+
+    <form method="GET" action="{{ url_for('reports') }}">
+        <div class="filter-bar">
+            <div class="form-group">
+                <label>Period</label>
+                <select name="period" class="form-control" onchange="this.form.submit()">
+                    <option value="daily" {{ 'selected' if period == 'daily' }}>Today</option>
+                    <option value="weekly" {{ 'selected' if period == 'weekly' }}>This Week</option>
+                    <option value="monthly" {{ 'selected' if period == 'monthly' }}>This Month</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>From</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="form-group">
+                <label>To</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-sm">Generate</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="grid-3" style="margin-bottom:24px">
+        <div class="card stat-card">
+            <div class="stat-value">{{ total_sessions }}</div>
+            <div class="stat-label">Total Sessions</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-value">{{ total_duration }}</div>
+            <div class="stat-label">Total Minutes</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-value">{{ unique_users }}</div>
+            <div class="stat-label">Unique Users</div>
+        </div>
+    </div>
+
+    <div style="margin-bottom:12px;display:flex;gap:8px">
+        <a href="{{ url_for('export_excel', date_from=date_from, date_to=date_to) }}" class="btn btn-success btn-sm">Export Excel</a>
+        <a href="{{ url_for('export_pdf', date_from=date_from, date_to=date_to) }}" class="btn btn-danger btn-sm">Export PDF</a>
+    </div>
+</div>
+
+{% if by_computer %}
+<div class="card">
+    <div class="card-header">By Computer</div>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Computer</th><th>Sessions</th><th>Total Duration (min)</th></tr></thead>
+            <tbody>
+                {% for comp, data in by_computer.items()|sort %}
+                <tr>
+                    <td>{{ comp }}</td>
+                    <td>{{ data.count }}</td>
+                    <td>{{ '%.1f'|format(data.duration) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if by_user %}
+<div class="card">
+    <div class="card-header">By User</div>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Name</th><th>Class</th><th>Sessions</th><th>Total Duration (min)</th></tr></thead>
+            <tbody>
+                {% for name, data in by_user.items()|sort %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ data['class'] }}</td>
+                    <td>{{ data.count }}</td>
+                    <td>{{ '%.1f'|format(data.duration) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if by_date %}
+<div class="card">
+    <div class="card-header">By Date</div>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Date</th><th>Sessions</th><th>Total Duration (min)</th></tr></thead>
+            <tbody>
+                {% for date, data in by_date.items()|sort %}
+                <tr>
+                    <td>{{ date }}</td>
+                    <td>{{ data.count }}</td>
+                    <td>{{ '%.1f'|format(data.duration) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not sessions %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128202;</div>
+        <div>No data for this period.</div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

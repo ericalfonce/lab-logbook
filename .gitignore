@@ -1,0 +1,19 @@
+# Local data and backups - contains real user names, do not commit
+logbook.db
+logbook.db-wal
+logbook.db-shm
+
+# Generated exports
+export.xlsx
+report.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# OS / editor
+Thumbs.db
+.DS_Store

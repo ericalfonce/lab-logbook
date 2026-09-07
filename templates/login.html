@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Admin Login - Lab Logbook{% endblock %}
+{% block content %}
+<div style="max-width:400px;margin:60px auto">
+    <div class="card">
+        <div class="card-header">Admin Login</div>
+        <form method="POST" action="{{ url_for('admin_login') }}">
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter admin password" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

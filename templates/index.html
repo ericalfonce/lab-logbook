@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Check In / Out - Lab Logbook{% endblock %}
+{% block content %}
+<div class="grid-2">
+    <div>
+        <div class="card">
+            <div class="card-header">Check In</div>
+            <form method="POST" action="{{ url_for('checkin') }}" id="checkin-form">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" name="user_name" class="form-control"
+                           placeholder="Type your full name" required autocomplete="off" id="name-input">
+                </div>
+
+                <div class="form-group">
+                    <label>Are you a...</label>
+                    <div class="user-type-toggle">
+                        <button type="button" class="active" onclick="setUserType('student')">Student</button>
+                        <button type="button" onclick="setUserType('staff')">Staff</button>
+                    </div>
+                </div>
+
+                <div class="form-group class-field visible" id="class-group">
+                    <label>Class</label>
+                    <input type="text" name="user_class" class="form-control"
+                           placeholder="e.g. Form 3A, Diploma Yr 2" id="class-input"
+                           list="class-suggestions">
+                    <datalist id="class-suggestions">
+                        {% for cls in class_suggestions %}
+                            <option value="{{ cls }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Computer</label>
+                    <div class="comp-grid" id="comp-grid">
+                        {% for comp in free_computers %}
+                            <div class="comp-cell free" data-id="{{ comp.id }}" onclick="selectComputer(this)">
+                                {{ comp.number }}
+                            </div>
+                        {% endfor %}
+                        {% for comp in computers if comp.status != 'free' %}
+                            <div class="comp-cell {{ comp.status }}" title="{{ comp.label }} - {{ comp.status|capitalize }}">
+                                {{ comp.number }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="computer_id" id="computer-id" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" id="checkin-btn" disabled>
+                    Check In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header">
+                Active Sessions
+                <span style="font-size:0.8rem;color:var(--text-muted);font-weight:400;margin-left:auto">
+                    {{ active_sessions|length }} online
+                </span>
+            </div>
+
+            {% if active_sessions %}
+                {% for sess in active_sessions %}
+                <div class="active-session ticker">
+                    <div class="active-session-info">
+                        <div>
+                            <div class="session-name">{{ sess.user_name }}</div>
+                            <div class="session-meta">
+                                {% if sess.user_class %}{{ sess.user_class }} &middot; {% endif %}
+                                PC {{ sess.comp_number }} &middot;
+                                In: {{ sess.check_in_time[11:16] }}
+                            </div>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ url_for('checkout', session_id=sess.id) }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Check Out</button>
+                    </form>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">&#128187;</div>
+                    <div>No active sessions</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">Live Status</div>
+            <div class="comp-grid">
+                {% for comp in computers %}
+                    <div class="comp-cell {{ comp.status }}" title="{{ comp.label }}">
+                        {{ comp.number }}
+                    </div>
+                {% endfor %}
+            </div>
+            <div style="margin-top:12px;display:flex;gap:16px;font-size:0.8rem;color:var(--text-muted)">
+                <span><span class="status-badge status-free">Free</span> {{ computers|selectattr('status','equalto','free')|list|length }}</span>
+                <span><span class="status-badge status-occupied">In Use</span> {{ computers|selectattr('status','equalto','occupied')|list|length }}</span>
+                <span><span class="status-badge status-maintenance">Maint.</span> {{ computers|selectattr('status','equalto','maintenance')|list|length }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+function setUserType(type) {
+    const btns = document.querySelectorAll('.user-type-toggle button');
+    btns.forEach(b => b.classList.remove('active'));
+    if (type === 'staff') {
+        btns[1].classList.add('active');
+        document.getElementById('class-group').classList.remove('visible');
+        document.getElementById('class-input').value = '';
+        document.getElementById('class-input').removeAttribute('required');
+    } else {
+        btns[0].classList.add('active');
+        document.getElementById('class-group').classList.add('visible');
+        document.getElementById('class-input').setAttribute('required', 'true');
+    }
+}
+
+function selectComputer(el) {
+    document.querySelectorAll('.comp-cell').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('computer-id').value = el.dataset.id;
+    document.getElementById('checkin-btn').disabled = false;
+}
+
+document.getElementById('name-input').addEventListener('input', function() {
+    const name = this.value.trim();
+    const stored = localStorage.getItem('lab_class_' + name);
+    if (stored) {
+        document.getElementById('class-input').value = stored;
+    }
+});
+
+document.getElementById('class-input').addEventListener('change', function() {
+    const name = document.getElementById('name-input').value.trim();
+    if (name && this.value) {
+        localStorage.setItem('lab_class_' + name, this.value);
+    }
+});
+{% endblock %}
