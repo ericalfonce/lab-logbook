@@ -44,10 +44,10 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Class</th>
-                    <th>PC</th>
-                    <th>Check In</th>
-                    <th>Check Out</th>
+                    <th>Class / Staff</th>
+                    <th>Computer</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
                     <th>Duration</th>
                     {% if session.get('admin_logged_in') %}
                     <th>Actions</th>
@@ -56,7 +56,7 @@
             </thead>
             <tbody>
                 {% for s in sessions %}
-                <tr>
+                <tr {% if not s.check_out_time %}class="active-row"{% endif %}>
                     <td>
                         {% if session.get('admin_logged_in') %}
                         <form method="POST" action="{{ url_for('edit_session', session_id=s.id) }}" style="display:inline">
@@ -78,8 +78,13 @@
                     </td>
                     <td>PC {{ s.comp_number }}</td>
                     <td>{{ s.check_in_time[:16].replace('T', ' ') }}</td>
-                    <td>{{ s.check_out_time[:16].replace('T', ' ') if s.check_out_time else '<span class="status-badge status-occupied">Active</span>'|safe }}</td>
+                    {% if s.check_out_time %}
+                    <td>{{ s.check_out_time[:16].replace('T', ' ') }}</td>
                     <td>{{ '%.1f'|format(s.duration_minutes or 0) }} min</td>
+                    {% else %}
+                    <td><span class="in-use"><span class="pulse-dot"></span>Still in use</span></td>
+                    <td><span class="live-duration" data-checkin="{{ s.check_in_time }}"></span></td>
+                    {% endif %}
                     {% if session.get('admin_logged_in') %}
                     <td>
                         <form method="POST" action="{{ url_for('delete_session', session_id=s.id) }}" style="display:inline"
@@ -99,4 +104,19 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+function updateLiveDurations() {
+    const now = Date.now();
+    document.querySelectorAll('.live-duration').forEach(el => {
+        const ms = now - new Date(el.dataset.checkin).getTime();
+        const mins = Math.max(0, Math.floor(ms / 60000));
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        el.textContent = (h ? h + 'h ' : '') + m + ' min';
+    });
+}
+updateLiveDurations();
+setInterval(updateLiveDurations, 30000);
 {% endblock %}
